@@ -1,0 +1,21 @@
+{
+    "files.associations": {
+        "*html": "html",
+        "iostream": "cpp",
+        "atomic": "cpp",
+        "xlocnum": "cpp",
+        "fstream": "cpp",
+        "xstring": "cpp",
+        "ostream": "cpp",
+        "ios": "cpp",
+        "xfacet": "cpp",
+        "xiosbase": "cpp",
+        "xlocale": "cpp",
+        "xlocinfo": "cpp",
+        "xmemory": "cpp",
+        "xstddef": "cpp",
+        "xtr1common": "cpp",
+        "xutility": "cpp",
+        "iosfwd": "cpp"
+    }
+}

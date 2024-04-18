@@ -1,0 +1,13 @@
+geopandas==0.14.3
+grpcio==1.62.1
+importlib_metadata==6.9.0
+matplotlib==3.8.0
+numpy==1.24.1
+pandas==2.2.2
+protobuf==5.26.1
+ray==2.6.3
+scipy==1.13.0
+Shapely==2.0.4
+tensorflow==2.16.1
+torch==2.2.2+cu118
+torchviz==0.0.2
