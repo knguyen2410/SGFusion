@@ -113,8 +113,7 @@ class ZoneCoordinator():
                 self.zmanagers[zid].train_cross(nei, uids, lr, ustep)
             
             with torch.no_grad():
-                #w1 = np.load(f'./tmp/{self.country}_lr{lr}_ustep{ustep}/weights_zone{zid}_cross{zid}.npy', allow_pickle=True)
-                w1 = np.load(f'./tmp/{self.country}_lr{lr}_ustep{ustep}/weights_zone{zid}.npy', allow_pickle=True)
+                w1 = np.load(f'./tmp/{self.country}_lr{lr}_ustep{ustep}/weights_zone{zid}_cross{zid}.npy', allow_pickle=True)
                 w1_dict = {k: torch.tensor(v).to(device) for k, v in zip(w_init.keys(), w1)}
                 grads[f'{zid}_{zid}'] = {k: w1_dict[k] - w_init[k].to(device) for k in w_init}
                 g1_flat = flatten_weights(grads[f'{zid}_{zid}'], device)
@@ -124,8 +123,7 @@ class ZoneCoordinator():
                 # g1_flat = (g1_flat - mean) / std
 
                 for nei in neighbors:
-                    #w2 = np.load(f'./tmp/{self.country}_lr{lr}_ustep{ustep}/weights_zone{zid}_cross{nei}.npy', allow_pickle=True)
-                    w2 = np.load(f'./tmp/{self.country}_lr{lr}_ustep{ustep}/weights_zone{zid}.npy', allow_pickle=True)
+                    w2 = np.load(f'./tmp/{self.country}_lr{lr}_ustep{ustep}/weights_zone{zid}_cross{nei}.npy', allow_pickle=True)
                     w2_dict = {k: torch.tensor(v).to(device) for k, v in zip(w_init.keys(), w2)}
                     grads[f'{zid}_{nei}'] = {k: w2_dict[k] - w_init[k].to(device) for k in w_init}
                     g2_flat = flatten_weights(grads[f'{zid}_{nei}'], device)

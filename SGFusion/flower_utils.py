@@ -2,12 +2,6 @@ import os
 import torch
 import numpy as np
 import flwr as fl
-from typing import List, Tuple, Union
-
-from flwr.common import Metrics
-from flwr.common.typing import FitRes
-from flwr.server.client_proxy import ClientProxy
-
 from pathlib import Path
 from flwr.common.typing import Scalar
 from collections import OrderedDict
@@ -18,7 +12,6 @@ from models import LSTMTarget
 
 # DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 DEVICE = torch.device('cpu')
-#DEVICE = torch.device("cuda")
 # DEVICE = "cpu"
 
 net = LSTMTarget(inputAtts=['distance','altitude','time_elapsed'],
@@ -135,40 +128,7 @@ def set_weights(model: torch.nn.ModuleList, weights: fl.common.Weights) -> None:
     )
     model.load_state_dict(state_dict, strict=True)
 
-class FedAvgWithStragglerDrop(fl.server.strategy.FedAvgZoneCross):
-    """Custom FedAvg which discards updates from stragglers."""
 
-    def aggregate_fit(
-        self,
-        rnd: int,
-        results: List[Tuple[ClientProxy, FitRes]],
-        failures: List[Union[Tuple[ClientProxy, FitRes], BaseException]],
-    ):
-        """Discard all the models sent by the clients that were stragglers."""
-        # Record which client was a straggler in this round
-        country = self.config["country"]
-        zid = self.config["zid"]
-        lr = self.config["lr"]
-        ustep = self.config["ustep"]
-        zid_cross = self.config["zid_cross"]
-        stragglers_mask = [res.metrics["is_straggler"] for _, res in results]
-
-        # keep those results that are not from stragglers
-        results = [res for i, res in enumerate(results) if not stragglers_mask[i]]
-
-        # call the parent `aggregate_fit()` (i.e. that in standard FedAvg)
-        aggregated_params = super().aggregate_fit(rnd, results, failures)
-        new_aggregated_params = aggregated_params[0]
-        if new_aggregated_params is not None:
-            ## save aggregated_weights
-            print(f"Saving aggregated_weights, country: {country}, zone: {zid}, lr: {lr}, ustep: {ustep}...")
-            if not os.path.exists(f"./tmp/{country}_lr{lr}_ustep{ustep}"):
-                os.makedirs(f"./tmp/{country}_lr{lr}_ustep{ustep}")
-            aggregated_weights: List[np.ndarray] = fl.common.parameters_to_weights(new_aggregated_params)
-            np.save(f"./tmp/{country}_lr{lr}_ustep{ustep}/weights_zone{zid}_cross{zid_cross}.npy", aggregated_weights, allow_pickle=True)
-        else:
-            aggregated_weights = 0
-        return aggregated_weights
 
 class SaveModelStrategyCross(fl.server.strategy.FedAvgZoneCross):
     def aggregate_fit(
@@ -246,13 +206,11 @@ def train_flower_cross(country: str,
 
     def client_fn(uid: str) -> HrpRayClient:
         # create a single client instance
-        print("client_fn check")
         return HrpRayClient(country, zid, uid, fed_dir, weights, neighbors=None, use_att=False)
 
 
     def fit_config(rd: int) -> Dict[str, str]:
         """Return a configuration with static batch size and (local) epochs."""
-        print("fit_config check")
         config = {
             "epoch_global": str(rd),
             "ustep": str(ustep),  # number of local epochs
@@ -274,21 +232,6 @@ def train_flower_cross(country: str,
         min_eval_clients=len(uids),
         on_fit_config_fn=fit_config,
     )
-    
-    # strategy = SaveModelStrategy(
-    #     country=country,
-    #     zid=zid,
-    #     #zid_cross=zid_cross,
-    #     lr=lr,
-    #     ustep=ustep,
-    #     #beta=None,
-    #     fraction_fit=1,
-    #     min_fit_clients=len(uids),
-    #     min_available_clients=len(uids),  # All clients should be available
-    #     fraction_eval=1,
-    #     min_eval_clients=len(uids),
-    #     on_fit_config_fn=fit_config,
-    # )
 
     client_resources = {
         # "num_gpus": num_client_gpus,
@@ -296,7 +239,7 @@ def train_flower_cross(country: str,
     }
 
     ray_config = {"include_dashboard": False}
-    print("flower cross check 1")
+
     # start simulation
     fl.simulation.start_simulation(
         client_fn=client_fn,
@@ -319,7 +262,7 @@ def train_flower_diff(country: str,
                       lr: float = 0.001,
                       lr_att: float = 0.001,
                       num_client_gpus: float = 1,
-                      num_client_cpus: float = 4,
+                      num_client_cpus: float = 1,
                       num_rounds: int = 1,
                       ) -> None:
 
@@ -360,6 +303,7 @@ def train_flower_diff(country: str,
 
     # start simulation
     fl.simulation.start_simulation(
+        client_fn=client_fn,
         clients_ids=uids,
         client_resources=client_resources,
         num_rounds=num_rounds,
